@@ -25,45 +25,135 @@
     [else
      (contains? value (rest list))]))
 
-(define (no-unassigned-variables? assignment CNF)
-  (cond
-    [(empty? CNF)
-     true]
-    [(empty? (first CNF))
-     (no-unassigned-variables? assignment (rest CNF))]
-    [(or (contains? (first (first CNF)) assignment) (contains? (* -1 (first (first CNF))) assignment))
-     (no-unassigned-variables? assignment (append (list (rest (first CNF))) (rest CNF)))]
-    [else
-     false]))
 
-(define (clause-is-true? assignment clause)
+
+(define (CNF-is-true? assignment CNF)
+  (local
+    [
+     
+     (define (clause-is-true? assignment clause)
+       (cond
+         [(empty? clause)
+          false]
+         [(contains? (first clause) assignment)
+          true]
+         [else
+          (clause-is-true? assignment (rest clause))]))]
+    
+    (equal? CNF (filter (lambda (x) (clause-is-true? assignment x)) CNF))))
+
+(define (get-unassigned-variables-clause assignment clause)
+  (remove-duplicates (get-unassigned-variables-clause-helper assignment clause)))
+
+(define (get-unassigned-variables-clause-helper assignment clause)
+       (cond
+         [(empty? clause)
+          empty]
+         [(or (contains? (first clause) assignment) (contains? (* -1 (first clause)) assignment))
+          (get-unassigned-variables-clause-helper assignment (rest clause))]
+         [else
+          (cons (first clause) (get-unassigned-variables-clause-helper assignment (rest clause)))]))
+
+
+(define (get-unassigned-variables assignment CNF)
+    (remove-duplicates 
+     (map (lambda (x) (cond
+                        [(< x 0)
+                         (* -1 x)]
+                        [else
+                         x]))
+          (foldr append empty (map (lambda (x) (get-unassigned-variables-clause assignment x)) 
+                                   CNF)))))
+
+
+
+(define (get-pure-literal assignment CNF)
+  (local
+    [
+     
+     (define (appears-true? value CNF)
+       (cond
+         [(empty? CNF)
+          false]
+         [(contains? value (first CNF))
+          true]
+         [else
+          (appears-true? value (rest CNF))]))
+     
+     (define (appears-false? value CNF)
+       (cond
+         [(empty? CNF)
+          false]
+         [(contains? (* -1 value) (first CNF))
+          true]
+         [else
+          (appears-false? value (rest CNF))]))
+     
+     (define (get-pure-literal-helper assignment CNF unassigned)
+       (cond
+         [(empty? unassigned)
+          false]
+         [(and (appears-true? (first unassigned) CNF) (not (appears-false? (first unassigned) CNF)))
+          (first unassigned)]
+         [(and (appears-false? (first unassigned) CNF) (not (appears-true? (first unassigned) CNF)))
+          (* -1 (first unassigned))]
+         [else
+          (get-pure-literal-helper assignment CNF (rest unassigned))]))]
+    
+    (get-pure-literal-helper assignment CNF (get-unassigned-variables assignment CNF))))
+
+
+(define (contains-true? assignment clause)
   (cond
     [(empty? clause)
      false]
     [(contains? (first clause) assignment)
      true]
     [else
-     (clause-is-true? assignment (rest clause))]))
+     (contains-true? assignment (rest clause))]))
 
-(define (CNF-is-true? assignment CNF)
-  (equal? CNF (filter (lambda (x) (clause-is-true? assignment x)) CNF)))
+(define (get-unit-literal-clause assignment clause)
+  (get-unit-literal-clause-helper assignment clause (get-unassigned-variables-clause assignment clause)))
+
+(define (get-unit-literal-clause-helper assignment clause unassigned)
+  (cond
+    [(and (not (contains-true? assignment clause)) (equal? 1 (length unassigned)))
+     (first unassigned)]
+    [else
+     false]))
+
+
+(define (get-unit-literal assignment CNF)
+  (cond
+    [(empty? CNF)
+     false]
+    [(not (equal? false (get-unit-literal-clause assignment (first CNF))))
+     (get-unit-literal-clause assignment (first CNF))]
+    [else
+     (get-unit-literal assignment (rest CNF))]))
 
 (define (solve-SAT assignment CNF)
   (cond
     ;;base case
-    [(no-unassigned-variables? assignment CNF) 
+    [(empty? (get-unassigned-variables assignment CNF))
      (CNF-is-true? assignment CNF)]
     ;;Pure Literal Elimination
-    [(not (equal? false (get-pure-literal CNF)))
-     (solve-SAT (append assignment (get-pure-literal CNF)) CNF)]
+    [(not (equal? false (get-pure-literal assignment CNF)))
+     (solve-SAT (append assignment (get-pure-literal assignment CNF)) CNF)]
     ;;Unit Propagation
-    [(not (equal? false (get-unit-literal CNF)))
-     (solve-SAT (append assignment (get-unit-literal CNF)) CNF)]
+    [(not (equal? false (get-unit-literal assignment CNF)))
+     (solve-SAT (append assignment (get-unit-literal assignment CNF)) CNF)]
     ;;Backtrack
     [else
-     (or (solve-SAT (append assignment (get-unknown-literal CNF)) CNF)
-         (solve-SAT (append assignment (* -1 (get-unknown-literal CNF))) CNF))]))
-     
+     (or (solve-SAT (append assignment (first (get-unassigned-variables assignment CNF))) CNF)
+         (solve-SAT (append assignment (* -1 (first (get-unassigned-variables assignment CNF)))) CNF))]))
+
+
+
+
+
+
+
 
 
 
