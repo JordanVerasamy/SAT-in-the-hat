@@ -16,6 +16,8 @@
 ;; (list int)
 ;; where the int is a variable that is true (so 4 means variable 4 is true, whereas -2 means variable 2 is false)
 
+
+
 (define (contains? value list)
   (cond
     [(empty? list)
@@ -42,28 +44,34 @@
     
     (equal? CNF (filter (lambda (x) (clause-is-true? assignment x)) CNF))))
 
-(define (get-unassigned-variables-clause assignment clause)
-  (remove-duplicates (get-unassigned-variables-clause-helper assignment clause)))
 
-(define (get-unassigned-variables-clause-helper assignment clause)
-       (cond
-         [(empty? clause)
-          empty]
-         [(or (contains? (first clause) assignment) (contains? (* -1 (first clause)) assignment))
-          (get-unassigned-variables-clause-helper assignment (rest clause))]
-         [else
-          (cons (first clause) (get-unassigned-variables-clause-helper assignment (rest clause)))]))
+
+(define (get-unassigned-variables-clause assignment clause)
+  (local
+    [
+     
+     (define (get-unassigned-variables-clause-helper assignment clause)
+  (cond
+    [(empty? clause)
+     empty]
+    [(or (contains? (first clause) assignment) (contains? (* -1 (first clause)) assignment))
+     (get-unassigned-variables-clause-helper assignment (rest clause))]
+    [else
+     (cons (first clause) (get-unassigned-variables-clause-helper assignment (rest clause)))]))]
+    
+  (remove-duplicates (get-unassigned-variables-clause-helper assignment clause))))
+
 
 
 (define (get-unassigned-variables assignment CNF)
-    (remove-duplicates 
-     (map (lambda (x) (cond
-                        [(< x 0)
-                         (* -1 x)]
-                        [else
-                         x]))
-          (foldr append empty (map (lambda (x) (get-unassigned-variables-clause assignment x)) 
-                                   CNF)))))
+  (remove-duplicates 
+   (map (lambda (x) (cond
+                      [(< x 0)
+                       (* -1 x)]
+                      [else
+                       x]))
+        (foldr append empty (map (lambda (x) (get-unassigned-variables-clause assignment x)) 
+                                 CNF)))))
 
 
 
@@ -103,35 +111,42 @@
     (get-pure-literal-helper assignment CNF (get-unassigned-variables assignment CNF))))
 
 
-(define (contains-true? assignment clause)
-  (cond
-    [(empty? clause)
-     false]
-    [(contains? (first clause) assignment)
-     true]
-    [else
-     (contains-true? assignment (rest clause))]))
-
-(define (get-unit-literal-clause assignment clause)
-  (get-unit-literal-clause-helper assignment clause (get-unassigned-variables-clause assignment clause)))
-
-(define (get-unit-literal-clause-helper assignment clause unassigned)
-  (cond
-    [(and (not (contains-true? assignment clause)) (equal? 1 (length unassigned)))
-     (first unassigned)]
-    [else
-     false]))
-
 
 (define (get-unit-literal assignment CNF)
-  (cond
-    [(empty? CNF)
-     false]
-    [(not (equal? false (get-unit-literal-clause assignment (first CNF))))
-     (get-unit-literal-clause assignment (first CNF))]
-    [else
-     (get-unit-literal assignment (rest CNF))]))
+  (local
+    [
+     
+     (define (contains-true? assignment clause)
+       (cond
+         [(empty? clause)
+          false]
+         [(contains? (first clause) assignment)
+          true]
+         [else
+          (contains-true? assignment (rest clause))]))
+     
+     (define (get-unit-literal-clause assignment clause)
+       (get-unit-literal-clause-helper assignment clause (get-unassigned-variables-clause assignment clause)))
+     
+     (define (get-unit-literal-clause-helper assignment clause unassigned)
+       (cond
+         [(and (not (contains-true? assignment clause)) (equal? 1 (length unassigned)))
+          (first unassigned)]
+         [else
+          false]))]
+    
+    (cond
+      [(empty? CNF)
+       false]
+      [(not (equal? false (get-unit-literal-clause assignment (first CNF))))
+       (get-unit-literal-clause assignment (first CNF))]
+      [else
+       (get-unit-literal assignment (rest CNF))])))
 
+
+
+;; consumes a CNF that is a list of clauses - returns true if and only if a set of assignments
+;; exists such that the entire boolean expression in conjunctive normal form is true
 (define (solve-SAT assignment CNF)
   (cond
     ;;base case
@@ -139,14 +154,14 @@
      (CNF-is-true? assignment CNF)]
     ;;Pure Literal Elimination
     [(not (equal? false (get-pure-literal assignment CNF)))
-     (solve-SAT (append assignment (get-pure-literal assignment CNF)) CNF)]
+     (solve-SAT (append assignment (list (get-pure-literal assignment CNF))) CNF)]
     ;;Unit Propagation
     [(not (equal? false (get-unit-literal assignment CNF)))
-     (solve-SAT (append assignment (get-unit-literal assignment CNF)) CNF)]
+     (solve-SAT (append assignment (list (get-unit-literal assignment CNF))) CNF)]
     ;;Backtrack
     [else
-     (or (solve-SAT (append assignment (first (get-unassigned-variables assignment CNF))) CNF)
-         (solve-SAT (append assignment (* -1 (first (get-unassigned-variables assignment CNF)))) CNF))]))
+     (or (solve-SAT (append assignment (list (first (get-unassigned-variables assignment CNF)))) CNF)
+         (solve-SAT (append assignment (list (* -1 (first (get-unassigned-variables assignment CNF))))) CNF))]))
 
 
 
