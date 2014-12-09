@@ -5,11 +5,11 @@ This is a naive implementation of the DPLL algorithm for solving boolean express
 
 These tactics are:
 
-1. Pure Literal Elimination:
+Pure Literal Elimination:
 
 If any variable x exists only in its positive form x, then we definitely know that setting x to true will never make the boolean expression false. The same applies to variables x who only appear in their negative form -x: setting x to false will never make the expression false.
 
-2. Unit Propagation:
+Unit Propagation:
 
 A unit clause is a clause who contains one unknown variable x and all other variables are false. Whenever we encounter a unit clause while solving a CNF, we know that the only way the CNF will be true is to make x true.
 
