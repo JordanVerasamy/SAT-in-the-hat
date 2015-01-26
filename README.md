@@ -40,6 +40,6 @@ which returns
 
 `(list 1 2 -3)`
 
-The sign on an index number corresponds to its truth value. In other words, this should be interpreted as meaning, "Assign A to true, B to be true, and C to be false. Then the expression (A v B v ~C) ^ (B v C) ^ (A v ~B) ^ (~A v ~C) is true."
+The sign on an index number corresponds to that variable's truth value. In other words, this should be interpreted as meaning, "Assign A to true, B to be true, and C to be false. Then the expression (A v B v ~C) ^ (B v C) ^ (A v ~B) ^ (~A v ~C) is true."
 
 This works (and rather efficiently, too!) for _any_ boolean expression in CNF. Try it out!
