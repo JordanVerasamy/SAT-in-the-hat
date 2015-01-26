@@ -36,7 +36,7 @@ Using this list of lists as an input to solve-CNF returns the set of assignments
 
 `(solve-CNF (list (list 1 2 -3) (list 2 3) (list 1 -2) (list -1 -3)))`
 
-`=>`
+which returns
 
 `(list 1 2 -3)`
 
