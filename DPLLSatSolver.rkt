@@ -240,16 +240,4 @@
                                CNF))]))]
     
     ;; apply the logic function and pass empty as the initial state of the `assignment` accumulator
-    (solve-CNF-logic empty CNF)))
-
-
-
-
-
-
-
-
-
-
-
-
+    (sort (solve-CNF-logic empty CNF) (lambda (x y) (< (abs x) (abs y))))))
