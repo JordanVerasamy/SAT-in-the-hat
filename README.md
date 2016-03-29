@@ -1,4 +1,4 @@
-RackSAT
+RackSATinator
 ==================================
 
 This is a naive implementation of the DPLL algorithm for solving boolean expressions in CNF. In general, we just try "guessing" that an unknown variable is true, and recursively trying to solve the resulting expression - if that fails, then "guess" that the variable was false instead. If this guessing was our only strategy, then we would have an average case of O(2^n). However, we have some tactics that let us skip "guessing" and know for sure what certain variables must be.
